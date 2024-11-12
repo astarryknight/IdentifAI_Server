@@ -61,12 +61,15 @@ def upload():
     #grab emnbeddings and id from request.body TODO
     id=0
     embeddings=0
+    name="John"
+    #embeddings will be a list containing all embeddings for a face/id
     count = collection.count_documents({ "id": id })
     if count==0:
         print(count)
         document = {
             "embeddings": embeddings,
-            "id": id
+            "id": id,
+            "name":name
         }
         return 200
     else:
@@ -78,6 +81,9 @@ def checkID():
     #gonna have to implement OPENCV/Facialrecognition libraries to check this
     results = collection.find_one({ "embeddings": "Post Title 1" })
     if(results):
-        return id
+        return {
+            "id":results["id"],
+            "name":results["name"]
+            }, 200
     else:
         return 404
