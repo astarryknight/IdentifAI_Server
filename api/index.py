@@ -7,6 +7,10 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import numpy as np
 import face_recognition
+import base64
+from PIL import Image
+import io
+import cv2
 
 
 load_dotenv()
@@ -14,9 +18,39 @@ user = os.getenv("USER")
 pw=os.getenv("PASS")
 
 app = Flask(__name__)
+CORS(
+ app,
+ resources={
+  r"/*": {
+   "origins": "*",
+   "methods": [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+   ],
+   "allow_headers": [
+    "Content-Type",
+    "Authorization",
+   ],
+  }
+ },
+)
 
 database=""
 collection=""
+
+#https://stackoverflow.com/questions/25186591/having-cv2-imread-reading-images-from-file-objects-or-memory-stream-like-data-h
+def np_from_img(file):
+     '''converts a buffer from a tar file in np.array'''
+     nparr = np.frombuffer(file, np.uint8)
+     img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+     return img_np
+     image = np.fromstring(im_str, np.uint8).reshape( h, w, nb_planes )
+     return np.asarray(bytearray(file.read()), dtype=np.uint8)
+
 
 @app.before_request
 def connect_db():
@@ -76,22 +110,59 @@ async def test():
 #function to upload images and id's to mongodb server
 @app.route('/upload', methods=["POST"])
 def upload():
-    #grab emnbeddings and id from request.body TODO
-    id=0
-    embeddings=0
-    name="John"
-    #embeddings will be a list containing all embeddings for a face/id
     count = collection.count_documents({ "id": id })
-    if count==0:
-        print(count)
-        document = {
-            "embeddings": embeddings,
-            "id": id,
-            "name":name
-        }
-        return 200
-    else:
-        return 409
+    #if(count==0): IMPLEMENT THIS IF YOU DONT WANT OVERWRITES IN THE DB / PROPER OVERWRITING IMPLEMENTED
+    #cv2.namedWindow("test")
+    #grab emnbeddings and id from request.body TODO
+    data = request.get_json()
+    name=data["name"]
+    id=data["id"]
+    images=data["images"]
+    embeddings=[]
+    for i in images:
+        # print(type(base64.b64decode(i)))
+        # b = io.BytesIO(base64.b64decode(i))
+        # Image.open(base64.b64decode(i))
+        # print(Image)
+        #print(face_recognition.face_encodings())
+        # print(i[0:90])
+        # image = Image.open()
+        image = np_from_img(base64.b64decode(i))
+        # return "hihi"
+        # image = np_from_img(io.BytesIO(base64.b64decode(i)))
+        # print(image)
+        rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #cv2.imshow("test", rgb_img)
+        #print(rgb_img)
+        #print(cv2.imread(image))
+        #face_recognition.face_encodings(image)
+        embeddings.append(face_recognition.face_encodings(rgb_img)[0])
+        
+    print(embeddings)
+    print(data["name"], flush=True)
+
+    document = {
+        "embeddings": embeddings,
+        "id": id,
+        "name":name
+    }
+
+    return "hiih"
+    # id=0
+    # embeddings=0
+    # name="John"
+    # #embeddings will be a list containing all embeddings for a face/id
+    # count = collection.count_documents({ "id": id })
+    # if count==0:
+    #     print(count)
+    #     document = {
+    #         "embeddings": embeddings,
+    #         "id": id,
+    #         "name":name
+    #     }
+    #     return 200
+    # else:
+    #     return 409
     
 @app.route('/get_faces', methods=["GET"])
 def getFaces():
