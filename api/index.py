@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from bson import json_util
@@ -110,7 +110,7 @@ async def test():
 #function to upload images and id's to mongodb server
 @app.route('/upload', methods=["POST"])
 def upload():
-    count = collection.count_documents({ "id": id })
+    #count = collection.count_documents({ "id": id }) make sure tyou define "id" first tho
     #if(count==0): IMPLEMENT THIS IF YOU DONT WANT OVERWRITES IN THE DB / PROPER OVERWRITING IMPLEMENTED
     #cv2.namedWindow("test")
     #grab emnbeddings and id from request.body TODO
@@ -136,10 +136,13 @@ def upload():
         #print(rgb_img)
         #print(cv2.imread(image))
         #face_recognition.face_encodings(image)
-        embeddings.append(face_recognition.face_encodings(rgb_img)[0])
+        embeddings.append(face_recognition.face_encodings(rgb_img)[0].tolist())
         
     print(embeddings)
     print(data["name"], flush=True)
+    
+    if(len(embeddings)==0):    
+        return Response(response="not a proper face image!", status=422)
 
     document = {
         "embeddings": embeddings,
@@ -147,7 +150,10 @@ def upload():
         "name":name
     }
 
-    return "hiih"
+    result = collection.insert_one(document)
+    print(result.acknowledged)
+
+    return Response(response="added to db!", status=200)
     # id=0
     # embeddings=0
     # name="John"
