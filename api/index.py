@@ -136,13 +136,16 @@ def upload():
         #print(rgb_img)
         #print(cv2.imread(image))
         #face_recognition.face_encodings(image)
-        embeddings.append(face_recognition.face_encodings(rgb_img)[0].tolist())
+        x = face_recognition.face_encodings(rgb_img)
+        if(len(x)==0):
+            return Response(response="not a proper face image!", status=422)
+        embeddings.append(x[0].tolist())
         
     print(embeddings)
     print(data["name"], flush=True)
     
-    if(len(embeddings)==0):    
-        return Response(response="not a proper face image!", status=422)
+    # if(len(embeddings)==0):    
+    #   return Response(response="not a proper face image!", status=422)
 
     document = {
         "embeddings": embeddings,
