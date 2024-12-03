@@ -34,6 +34,7 @@ CORS(
    "allow_headers": [
     "Content-Type",
     "Authorization",
+    "Access-Control-Allow-Origin"
    ],
   }
  },
